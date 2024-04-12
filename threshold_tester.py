@@ -1,4 +1,5 @@
 import cv2
+import re
 import os
 import sys
 import logging
@@ -8,10 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 import gc
 from queue import Queue, Empty, Full
 import time
-
-# Configure logging
-logging.basicConfig(filename='app.log', filemode='w', level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+import shutil
 
 
 def process_frame(frame_data):
@@ -20,9 +18,15 @@ def process_frame(frame_data):
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         gray_next_frame = cv2.cvtColor(next_frame, cv2.COLOR_BGR2GRAY)
 
-        if ssim(gray_frame, gray_next_frame) < similarity_threshold:
+        similarity = ssim(gray_frame, gray_next_frame) 
+
+        logging.info(f"{output_path}: {similarity}")
+        
+        if similarity < similarity_threshold:
             cv2.imwrite(output_path, frame)
             return True
+
+
     except Exception as e:
         logging.error(f"Error processing frame: {e}")
     return False
@@ -81,14 +85,57 @@ def extract_frames(video_path, output_folder, similarity_threshold=0.95, num_wor
     logging.info('Video released and processing done')
     gc.collect()
 
+
+def parse_frame_scores_from_log(file_path):
+    score_dict = {}
+    pattern = re.compile(r"(\S+\.jpg):\s+(\d+\.\d+)")  # Regex to find paths and scores
+
+    with open(file_path, 'r') as file:
+        for line in file:
+            match = pattern.search(line)
+            if match:
+                # Extracting file path and score
+                file_path = match.group(1)
+                score = float(match.group(2))
+                score_dict[file_path] = score
+
+    return score_dict
+
+
+def filter_frames_by_threshold(img2sim, output_folder, thresh):
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    images = []  # Track the images above this threshold
+    for img, sim in img2sim.items():
+        if sim < thresh and os.path.exists(img):
+            new_file_path = os.path.join(output_folder, os.path.basename(img))
+            logging.info("Copying {} to {}".format(img, new_file_path))
+            shutil.copy(img, new_file_path)  # Copy the file to the new directory
+            images.append(new_file_path)  # Append the new file path to the list
+    return images
+
+
 def grid_test(video_path, output_folder, thresholds=[0.95,0.9,0.85,0.8,0.75,0.7]):
     logging.info("Starting threshold tester. Thresholds: %s", thresholds)    
 
-	frame_to_threshold = extract_frames(video_path, threshold_output, similarity_threshold=0.0)
+    # Extract all frames, calculating similiarity to logfile 
+    all_frame_output = os.path.join(output_folder, f'threshold_{1.0}')
+    extract_frames(video_path, all_frame_output, similarity_threshold=1.0)
+
+    # Parse the image to similarity file
+    img2sim = parse_frame_scores_from_log(logfile)
+
     for thresh in thresholds:
         logging.info(f"Processing threshold: {thresh}")
         threshold_output = os.path.join(output_folder, f'threshold_{thresh}')
-		filter_frames_by_threshold
+        images = filter_frames_by_threshold(img2sim,threshold_output,thresh)
+        print(f"Threshold {thresh}:\t{len(images)} images.")
+
+
+# Configure logging
+logfile = 'log.txt'
+logging.basicConfig(filename=logfile, filemode='w', level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 ### Parse arguments ###
 if len(sys.argv) < 2:
@@ -99,7 +146,7 @@ if len(sys.argv) < 2:
 
 # Usage
 video_path = sys.argv[1]  
-output_folder = 'threshold_tester'  # Folder to save the extracted images
+output_folder = 'threshold_test'  # Folder to save the extracted images
 
 grid_test(video_path, output_folder)
 
