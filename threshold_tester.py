@@ -41,7 +41,7 @@ def worker(task_queue):
         except Empty:
             continue
 
-def extract_frames(video_path, output_folder, similarity_threshold=0.95, num_workers=5):
+def extract_frames(video_path, output_folder, similarity_threshold=0.95, num_workers=5, skip_frames=30):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
@@ -50,6 +50,7 @@ def extract_frames(video_path, output_folder, similarity_threshold=0.95, num_wor
     frame_count = 0
     last_frame = None
     last_output_path = None
+    last_saved_frame_index = -skip_frames  # Initialize so that the first frame can be set as last_frame
     task_queue = Queue(maxsize=num_workers * 2)
 
     with ThreadPoolExecutor(max_workers=num_workers) as executor:
@@ -65,13 +66,14 @@ def extract_frames(video_path, output_folder, similarity_threshold=0.95, num_wor
             if not success:
                 break
 
-            output_path = os.path.join(output_folder, f"frame_{frame_count:04d}.jpg")
-            
-            if last_frame is not None:
-                task_queue.put((last_frame, frame, last_output_path, similarity_threshold))
-            
-            last_frame = frame
-            last_output_path = output_path
+            if frame_count - last_saved_frame_index == skip_frames:
+                if last_frame is not None:
+                    output_path = os.path.join(output_folder, f"frame_{frame_count - skip_frames:04d}.jpg")
+                    task_queue.put((last_frame, frame, last_output_path, similarity_threshold))
+                last_frame = frame
+                last_output_path = os.path.join(output_folder, f"frame_{frame_count:04d}.jpg")
+                last_saved_frame_index = frame_count  # Update the index of the last saved frame
+
             frame_count += 1
             pbar.update(1)
 
@@ -146,7 +148,7 @@ if len(sys.argv) < 2:
 
 # Usage
 video_path = sys.argv[1]  
-output_folder = 'threshold_test'  # Folder to save the extracted images
+output_folder = 'threshold_test_frameskip_30'  # Folder to save the extracted images
 
 grid_test(video_path, output_folder)
 
