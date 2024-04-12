@@ -2,11 +2,11 @@ import sys
 import os
 import imageio
 
-# Path to the downloaded FFmpeg binary
-ffmpeg_executable_path = './ffmpeg'
+## Path to the downloaded FFmpeg binary
+ffmpeg_executable_path = '/workspace/autocaption/ffmpeg'
 
 # Set the environment variable
-os.environ["IMAGEIO_FFMPEG_EXE"] = ffmpeg_executable_path
+#os.environ["IMAGEIO_FFMPEG_EXE"] = ffmpeg_executable_path
 
 # Now try to import moviepy or use imageio-ffmpeg directly
 from moviepy.editor import VideoFileClip
