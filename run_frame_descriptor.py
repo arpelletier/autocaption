@@ -59,8 +59,8 @@ def frame_descriptor(input_files, output_file='./descriptions.txt'):
         count = 0
         for f in input_files:
             count += 1
-            print(f"Processing file {f} ({count} out of {len(input_files)}")
-            logger.info(f"Processing file {f} ({count} out of {len(input_files)}")
+            print(f"Processing file {f} ({count} out of {len(input_files)})")
+            logger.info(f"Processing file {f} ({count} out of {len(input_files)})")
 
             start_time = time.time()
 
@@ -100,6 +100,8 @@ def setup_arg_parser():
     parser.add_argument('-i',"--input_folder", type=str, default=".",
                         help="Path to the input folder containing frames files.")
 
+    parser.add_argument('-o',"--output_file", type=str, default="./descriptions.txt",
+                        help="Path to the output file where results will be stored.")
     return parser
 
 
@@ -117,13 +119,13 @@ def main():
     # Validate input paths
     validate_paths(args.input_folder)
 
-    input_files = find_files_recursive(args.input_folder, '.jpg', test=True)
+    input_files = find_files_recursive(args.input_folder, '.jpg')
     logger.info(f"Number of frame files: {len(input_files)}")
     logger.info(f"{input_files}")
 
     # Run description batcher
     logger.info(f"Starting description batcher. Arguments: {args}")
-    frame_descriptor(input_files)
+    frame_descriptor(input_files, output_file=args.output_file)
 
 
 if __name__ == "__main__":
