@@ -9,7 +9,7 @@ from src.video_processing.video_to_text import extract_image_text, extract_image
 from src.logger import setup_logger
 
 # Initialize logger
-logger = setup_logger('./log/frame_extractor_log.txt')
+logger = setup_logger('./log/autocaption_log.txt')
 
 def correct_captions(timestamp_to_text, timestamp_to_frames=None, frame_to_transcript=None,
                      frame_to_onscreen_text=None, frame_to_description=None):
@@ -115,7 +115,7 @@ def main():
 
     # Suppress console output for logger
     for handler in logger.handlers:
-        if isinstance(handler, logging.StreamHandler):
+        if 'StreamHandler' in str(type(handler)):
             handler.setLevel(logging.WARNING)
 
     # Parse arguments

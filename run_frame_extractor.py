@@ -3,11 +3,11 @@ import os
 import sys
 import logging
 
-from src.video_processing.frame_extractor import extract_frames_with_timestamps
+from src.video_processing.frame_extractor import extract_frames_with_timestamps, create_pdf_from_frames
 from src.logger import setup_logger
 
 # Initialize logger
-logger = setup_logger('./log/frame_extractor_log.txt')
+logger = setup_logger(log_file_name='./log/run_frame_extractor_log.txt')
 
 
 def frame_extractor(input_files, similarity_threshold=0.95, fps=1.0, num_workers=5):
@@ -16,14 +16,20 @@ def frame_extractor(input_files, similarity_threshold=0.95, fps=1.0, num_workers
         logger.info(f"Processing file {f}")
         print(f"Processing file {f}")
 
-        output_folder = os.path.join(os.path.dirname(f),'frames')
+        frames_output_folder = os.path.join(os.path.dirname(f),'frames')
 
-        extract_frames_with_timestamps(f, output_folder,
+        extract_frames_with_timestamps(f, frames_output_folder,
                                        similarity_threshold=similarity_threshold,
                                        num_workers=num_workers,
                                        skip_frames_fps=fps)
 
-        logger.info(f"Written to folder {output_folder}")
+        logger.info(f"Written to folder {frames_output_folder}")
+
+        pdf_out_file = os.path.join(os.path.dirname(f), 'video_frames.pdf')
+        create_pdf_from_frames(frames_output_folder, output_pdf_path=pdf_out_file)
+        print(pdf_out_file)
+
+        logger.info(f"Combined pdf file output to {pdf_out_file}")
 
     logger.info("Finished frame extraction.")
 
@@ -90,7 +96,7 @@ def main():
 
     # Suppress console output for logger
     for handler in logger.handlers:
-        if isinstance(handler, logging.StreamHandler):
+        if 'StreamHandler' in str(type(handler)):
             handler.setLevel(logging.WARNING)
 
     # Parse arguments

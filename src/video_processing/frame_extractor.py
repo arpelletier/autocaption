@@ -1,5 +1,7 @@
 import os
 import gc
+from PIL import Image
+from reportlab.pdfgen import canvas
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 from queue import Queue, Empty
@@ -7,9 +9,39 @@ import cv2
 from skimage.metrics import structural_similarity as ssim
 
 from ..logger import setup_logger
+from ..util.utilities import parse_timestamps_to_frames, parse_time_to_seconds
 
 # Initialize logger
 logger = setup_logger()
+
+
+def create_pdf_from_frames(frames_folder, output_pdf_path='video_frames.pdf'):
+    # Extract time of each frame
+    time_to_frame = parse_timestamps_to_frames(frames_folder)
+    frame_times = {parse_time_to_seconds(time): frame for time, frame in time_to_frame.items()}
+    sorted_frame_times = sorted(frame_times.items())
+
+    # List of ordered frames by time
+    ordered_frames = [os.path.join(frames_folder, frame) for _, frame in sorted_frame_times]
+
+    # Start creating the PDF
+    if ordered_frames:
+        c = canvas.Canvas(output_pdf_path)
+
+        # Assuming all images have the same dimensions
+        first_image = Image.open(ordered_frames[0])
+        width, height = first_image.size
+        c.setPageSize((width, height))
+
+        for frame_path in ordered_frames:
+            c.drawImage(frame_path, 0, 0, width, height)
+            c.showPage()  # End the current page and start a new one
+
+        c.save()
+        logger.info(f"PDF created successfully at {output_pdf_path}")
+    else:
+        logger.info("No frames were found to add to the PDF.")
+
 
 def process_frame(frame_data):
     try:

@@ -20,15 +20,12 @@ def parse_timestamps_to_frames(input_dir):
     """ Parses filenames in a directory to map VTT-style timestamps to filenames. """
     timestamp_to_filename = {}
     for filename in os.listdir(input_dir):
-        if filename.startswith('frame_') and filename.endswith('.jpg'):
-            # Example filename: 'frame_6800_272.000s.jpg'
+        if 'frame' in filename and filename.endswith('.jpg'):
             parts = filename.split('_')
-            if len(parts) == 3:
-                frame_number, timestamp_with_s = parts[2], parts[3].split('s.jpg')[0]
-                timestamp_seconds = float(timestamp_with_s)
-                formatted_timestamp = seconds_to_vtt_format(timestamp_seconds)
-                timestamp_to_filename[formatted_timestamp] = filename
-
+            frame_number, timestamp_with_s = parts[-2], parts[-1].split('s.jpg')[0]
+            timestamp_seconds = float(timestamp_with_s)
+            formatted_timestamp = seconds_to_vtt_format(timestamp_seconds)
+            timestamp_to_filename[formatted_timestamp] = filename
     return timestamp_to_filename
 
 
