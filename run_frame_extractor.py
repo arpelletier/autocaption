@@ -3,6 +3,7 @@ import os
 import sys
 import logging
 
+from src.util.utilities import find_files_recursive
 from src.video_processing.frame_extractor import extract_frames_with_timestamps, create_pdf_from_frames
 from src.logger import setup_logger
 
@@ -32,22 +33,6 @@ def frame_extractor(input_files, similarity_threshold=0.95, fps=1.0, num_workers
         logger.info(f"Combined pdf file output to {pdf_out_file}")
 
     logger.info("Finished frame extraction.")
-
-
-def find_files_recursive(directory, extension='.mp4', test=False):
-    """ Recursively finds all files with the specified extension in the directory. """
-    matched_files = []
-    for root, dirs, f in os.walk(directory):
-        for file in f:
-            if file.endswith(extension):
-                matched_files.append(os.path.join(root, file))
-
-    # For testing purposes, only use the video files in "./data/Test". These are removed otherwise
-    if test:
-        matched_files = [m for m in matched_files if "./data/Test/" in m]
-    else:
-        matched_files = [m for m in matched_files if "./data/Test/" not in m]
-    return matched_files
 
 
 def validate_paths(video_path, video_folder_path):

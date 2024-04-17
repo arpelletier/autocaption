@@ -45,6 +45,8 @@ def find_files(directory, require_audio=False, require_captions=False):
 
     # Loop through all files in the specified directory
     for file in os.listdir(directory):
+        if file.startswith('._'): # skip metadata files
+            continue
         if file.endswith('.mp4'):
             video_file = os.path.join(directory, file)
         elif file.endswith('.m4a'):
@@ -67,6 +69,22 @@ def find_files(directory, require_audio=False, require_captions=False):
         'audio': audio_file,
         'caption': caption_file
     }
+
+def find_files_recursive(directory, extension='.mp4', test=False):
+    """ Recursively finds all files with the specified extension in the directory. """
+    matched_files = []
+    for root, dirs, f in os.walk(directory):
+        for file in f:
+            if file.startswith('._') or not file.endswith(extension): # skip metadata files
+                continue
+            matched_files.append(os.path.join(root, file))
+
+    # For testing purposes, only use the video files in "./data/Test". These are removed otherwise
+    if test:
+        matched_files = [m for m in matched_files if "./data/Test/" in m]
+    else:
+        matched_files = [m for m in matched_files if "./data/Test/" not in m]
+    return matched_files
 
 
 def read_vtt(vtt_file):
